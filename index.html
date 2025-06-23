@@ -41,7 +41,8 @@
           const f = math.simplify(`${ladoIzq} - (${ladoDer})`);
           const expr = f.toString();
           resultadoDiv.innerHTML = `<b>Forma reducida:</b> ${expr}`;
-          if (math.degree(f, 'x') <= 2) {
+          const grado = math.degree(expr, 'x');
+          if (grado <= 2) {
             if (operador === "=") {
               let sol = math.solve(expr, 'x');
               resultadoDiv.innerHTML += `<br><b>Solución:</b> x = ${sol.join(', ')}`;
@@ -145,3 +146,4 @@
   </script>
 </body>
 </html>
+
