@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Resuelve Ecuaciones e Inecuaciones</title>
+  <script src="https://cdn.jsdelivr.net/npm/mathjs@11/lib/browser/math.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; }
+    #grafica { width: 100%; height: 400px; }
+    .output { background: #f4f4f4; padding: 15px; margin-top: 10px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h1>🧮 Resolver Ecuaciones e Inecuaciones</h1>
+  <p>Escribe una expresión como: <b>x^2 - 4 = 0</b>, <b>x^2 - 4 &lt; 0</b>, <b>(x^2 - 1)/(x - 1)</b></p>
+  <input type="text" id="expresion" placeholder="Ej: x^2 - 5x + 6 = 0" />
+  <button onclick="resolver()">Resolver</button>
+  <div class="output" id="resultado"></div>
+  <div class="output" id="dominioRango"></div>
+  <div id="grafica"></div>
+
+  <script>
+    function resolver() {
+      const input = document.getElementById("expresion").value;
+      const resultadoDiv = document.getElementById("resultado");
+      const drDiv = document.getElementById("dominioRango");
+      resultadoDiv.innerHTML = "";
+      drDiv.innerHTML = "";
+      try {
+        const esEcuacion = input.includes("=");
+        const esDesigualdad = input.includes("<") || input.includes(">");
+        if (esEcuacion || esDesigualdad) {
+          const operador = esEcuacion ? "=" : input.includes("<=") ? "<=" : input.includes(">=") ? ">=" : input.includes("<") ? "<" : ">";
+          const [ladoIzq, ladoDer] = input.split(operador).map(e => math.simplify(e));
+          const f = math.simplify(`${ladoIzq} - (${ladoDer})`);
+          const expr = f.toString();
+          resultadoDiv.innerHTML = `<b>Forma reducida:</b> ${expr}`;
+          if (math.degree(f, 'x') <= 2) {
+            if (operador === "=") {
+              let sol = math.solve(expr, 'x');
+              resultadoDiv.innerHTML += `<br><b>Solución:</b> x = ${sol.join(', ')}`;
+            } else {
+              resultadoDiv.innerHTML += `<br><b>Tabla de signos:</b><br>${tablaSignos(expr, operador)}`;
+              resultadoDiv.innerHTML += `<br><b>Solución en intervalo:</b> ${inecuacionIntervalo(expr, operador)}`;
+            }
+          }
+          graficar(expr);
+          mostrarDominioRango(expr);
+        } else {
+          const expr = math.simplify(input).toString();
+          resultadoDiv.innerHTML = `<b>Expresión:</b> ${expr}`;
+          graficar(expr);
+          mostrarDominioRango(expr);
+        }
+      } catch (err) {
+        resultadoDiv.innerHTML = `<span style="color:red">Error: ${err.message}</span>`;
+      }
+    }
+
+    function graficar(expr) {
+      let x = [], y = [];
+      for (let i = -10; i <= 10; i += 0.1) {
+        try {
+          x.push(i);
+          y.push(math.evaluate(expr, {x: i}));
+        } catch {
+          x.push(i);
+          y.push(null);
+        }
+      }
+      Plotly.newPlot('grafica', [{
+        x: x,
+        y: y,
+        mode: 'lines',
+        name: 'f(x)',
+        line: {color: 'blue'}
+      }], {
+        title: 'Gráfica de la función',
+        xaxis: {title: 'x'},
+        yaxis: {title: 'f(x)'}
+      });
+    }
+
+    function mostrarDominioRango(expr) {
+      let dominio = "Todos los reales";
+      if (expr.includes("/")) {
+        const partes = expr.split("/");
+        const denominador = math.simplify(partes[1]);
+        dominio = `x ≠ raíces de (${denominador})`;
+      }
+      let x = [], y = [];
+      for (let i = -100; i <= 100; i += 0.5) {
+        try {
+          const val = math.evaluate(expr, {x: i});
+          x.push(i);
+          y.push(val);
+        } catch {}
+      }
+      const ymin = Math.min(...y);
+      const ymax = Math.max(...y);
+      const rango = `[${ymin.toFixed(2)}, ${ymax.toFixed(2)}]`;
+      let asintotas = expr.includes("/") ? "Posibles asíntotas verticales en valores donde el denominador se anula." : "No hay asíntotas verticales.";
+      document.getElementById("dominioRango").innerHTML = `
+        <b>Dominio:</b> ${dominio}<br>
+        <b>Rango aproximado:</b> ${rango}<br>
+        <b>Asíntotas:</b> ${asintotas}
+      `;
+    }
+
+    function tablaSignos(expr, operador) {
+      const soluciones = math.solve(expr
