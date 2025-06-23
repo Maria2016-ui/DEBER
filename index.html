@@ -7,15 +7,15 @@
   <script src="https://cdn.jsdelivr.net/npm/mathjs@11/lib/browser/math.js"></script>
   <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    input, button { padding: 10px; margin: 5px 0; width: 100%; }
+    body { font-family: sans-serif; padding: 20px; background: #f9f9f9; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; border-radius: 6px; border: 1px solid #ccc; }
     #grafica { width: 100%; height: 400px; }
-    .output { background: #f4f4f4; padding: 15px; margin-top: 10px; border-radius: 8px; }
+    .output { background: #fff; padding: 15px; margin-top: 10px; border-radius: 8px; box-shadow: 0 0 5px #ddd; }
   </style>
 </head>
 <body>
   <h1>🧮 Resolver Ecuaciones e Inecuaciones</h1>
-  <p>Escribe una expresión como: <b>x^2 - 4 = 0</b>, <b>x^2 - 4 &lt; 0</b>, <b>(x^2 - 1)/(x - 1)</b></p>
+  <p>Escribe una ecuación o inecuación como: <b>x^2 - 4 = 0</b>, <b>x^2 - 4 &lt; 0</b>, <b>(x^2 - 1)/(x - 1)</b></p>
   <input type="text" id="expresion" placeholder="Ej: x^2 - 5x + 6 = 0" />
   <button onclick="resolver()">Resolver</button>
   <div class="output" id="resultado"></div>
@@ -111,4 +111,35 @@
     }
 
     function tablaSignos(expr, operador) {
-      const soluciones = math.solve(expr
+      const soluciones = math.solve(expr, 'x');
+      const puntos = [...soluciones.map(s => Number(s)), -Infinity, Infinity].sort((a,b)=>a-b);
+      let tabla = "<table border='1'><tr><th>Intervalo</th><th>Signo de f(x)</th></tr>";
+      for (let i = 0; i < puntos.length - 1; i++) {
+        const a = puntos[i], b = puntos[i+1];
+        const test = (a + b) / 2;
+        let valor = math.evaluate(expr, {x: test});
+        let signo = valor > 0 ? "+" : valor < 0 ? "−" : "0";
+        tabla += `<tr><td>(${a}, ${b})</td><td>${signo}</td></tr>`;
+      }
+      tabla += "</table>";
+      return tabla;
+    }
+
+    function inecuacionIntervalo(expr, operador) {
+      const soluciones = math.solve(expr, 'x').map(n => Number(n)).sort((a,b)=>a-b);
+      let resultado = "";
+      if (operador === "<") {
+        resultado = `x ∈ (${soluciones[0]}, ${soluciones[1]})`;
+      } else if (operador === "<=") {
+        resultado = `x ∈ [${soluciones[0]}, ${soluciones[1]}]`;
+      } else if (operador === ">") {
+        resultado = `x ∈ (−∞, ${soluciones[0]}) ∪ (${soluciones[1]}, ∞)`;
+      } else if (operador === ">=") {
+        resultado = `x ∈ (−∞, ${soluciones[0]}] ∪ [${soluciones[1]}, ∞)`;
+      }
+      return resultado;
+    }
+  </script>
+</body>
+</html>
+
